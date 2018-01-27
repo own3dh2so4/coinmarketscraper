@@ -1,0 +1,14 @@
+# Go
+/pkg/
+/coverage/
+/log*/
+/bin/
+
+# IDEs
+.idea
+
+# Sonar files
+report.xml
+test.xml
+cover.out
+coverage.xml
