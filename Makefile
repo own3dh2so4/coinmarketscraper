@@ -68,7 +68,7 @@ version:
 
 .PHONY: metrics
 metrics:
-	gometalinter.v1 --checkstyle src/$(PROJECT)/... > report.xml
+	gometalinter.v2 --checkstyle src/$(PROJECT)/... > report.xml
 	sed -i 's#src/titan/src/titan#src/titan#g' report.xml
 	@for D in $$(find ./src/$(PROJECT) -type d ); do \
 		go test $$D -coverprofile=cover.out; \
