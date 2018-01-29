@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"coinmarketscraper/engine"
@@ -20,7 +21,15 @@ func main() {
 	}()
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 	coins := engine.Run(stopChan)
-	for coin := range coins {
-		fmt.Println(fmt.Sprintf("%+v", coin))
+	wg := &sync.WaitGroup{}
+	for i := 0; i < 1000; i++ {
+		wg.Add(1)
+		go func() {
+			for coin := range coins {
+				fmt.Println(fmt.Sprintf("%+v", coin))
+			}
+			wg.Done()
+		}()
 	}
+	wg.Wait()
 }

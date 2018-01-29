@@ -13,17 +13,32 @@ import (
 	"golang.org/x/net/html"
 )
 
+func getCoinMarketUrls() []string {
+	coinMarketUrls := []string{}
+	for i := 1; ; i++ {
+		newURL := fmt.Sprintf("https://coinmarketcap.com/%d", i)
+		resp, err := http.Head(newURL)
+		if err == nil && resp.StatusCode == http.StatusOK {
+			coinMarketUrls = append(coinMarketUrls, newURL)
+		} else {
+			break
+		}
+		resp.Body.Close()
+	}
+	return coinMarketUrls
+}
+
 func Run(cancelChan <-chan struct{}) <-chan coin.Coin {
-	cancelChans := []chan struct{}{}
-	cc := make(chan struct{})
-	ch := newCoinScraper("https://coinmarketcap.com").startScrap(cc)
-	cancelChans = append(cancelChans, cc)
-	for i := 1; i < 3; i++ {
-		cc = make(chan struct{})
-		ch = merge(ch, newCoinScraper(fmt.Sprintf("https://coinmarketcap.com/%d", i)).
-			startScrap(cc))
+	cancelChans := []chan<- struct{}{}
+	coinsChans := []<-chan coin.Coin{}
+	for _, url := range getCoinMarketUrls() {
+		cc := make(chan struct{})
+		ch := newCoinScraper(url).
+			startScrap(cc)
+		coinsChans = append(coinsChans, ch)
 		cancelChans = append(cancelChans, cc)
 	}
+
 	go func() {
 		<-cancelChan
 		for _, c := range cancelChans {
@@ -31,7 +46,7 @@ func Run(cancelChan <-chan struct{}) <-chan coin.Coin {
 			close(c)
 		}
 	}()
-	return ch
+	return merge(coinsChans...)
 }
 
 type coinScraper struct {
@@ -51,7 +66,7 @@ func newCoinScraper(url string) coinScraper {
 func (cs coinScraper) startScrap(cancelChan <-chan struct{}) <-chan coin.Coin {
 	output := make(chan coin.Coin, 10)
 	go func() {
-		ticker := time.NewTicker(1 * time.Second).C
+		ticker := time.NewTicker(1 * time.Nanosecond).C
 		for {
 			select {
 			case <-cancelChan:
