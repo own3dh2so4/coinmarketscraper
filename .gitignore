@@ -12,3 +12,6 @@ report.xml
 test.xml
 cover.out
 coverage.xml
+
+# Project
+/src/src/

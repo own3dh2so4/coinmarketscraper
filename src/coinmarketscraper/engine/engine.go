@@ -13,7 +13,7 @@ import (
 	"golang.org/x/net/html"
 )
 
-func Run(cancelChan <-chan struct{}) (<-chan coin.Coin, <-chan struct{}) {
+func Run(cancelChan <-chan struct{}) <-chan coin.Coin {
 	cancelChans := []chan struct{}{}
 	cc := make(chan struct{})
 	ch := newCoinScraper("https://coinmarketcap.com").startScrap(cc)
@@ -24,17 +24,14 @@ func Run(cancelChan <-chan struct{}) (<-chan coin.Coin, <-chan struct{}) {
 			startScrap(cc))
 		cancelChans = append(cancelChans, cc)
 	}
-	canceledChan := make(chan struct{})
 	go func() {
 		<-cancelChan
 		for _, c := range cancelChans {
 			c <- struct{}{}
 			close(c)
 		}
-		canceledChan <- struct{}{}
-		close(canceledChan)
 	}()
-	return ch, canceledChan
+	return ch
 }
 
 type coinScraper struct {

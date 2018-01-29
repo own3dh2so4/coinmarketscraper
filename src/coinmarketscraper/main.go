@@ -19,14 +19,8 @@ func main() {
 		return
 	}()
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
-	coins, end := engine.Run(stopChan)
-	for {
-		select {
-		case c := <-coins:
-			fmt.Println(fmt.Sprintf("%+v", c))
-		case <-end:
-			fmt.Println("All gorutines dead")
-			return
-		}
+	coins := engine.Run(stopChan)
+	for coin := range coins {
+		fmt.Println(fmt.Sprintf("%+v", coin))
 	}
 }
