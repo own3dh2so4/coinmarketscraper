@@ -29,9 +29,24 @@ all:	build
 .PHONY: build
 build: format test compile
 
+.PHONY: docker-compile
+docker-compile:
+	docker build -t golang-compile:1.0 docker/build/
+	docker run -it --rm -v $(PWD):/go golang-compile:1.0 make compile
+
+.PHONY: docker-build
+docker-build: compile-docker
+	cp bin/$(PROJECT) docker/execute
+	docker build -t $(PROJECT):1.0 docker/execute/
+	docker run --rm $(PROJECT):1.0
+
 .PHONY: compile
 compile:
 	$(GOBUILD) -o bin/$(PROJECT) $(PROJECT)
+
+.PHONY: compile-docker
+compile-docker:
+	CGO_ENABLED=0 GOOS=linux $(GOBUILD) -o bin/$(PROJECT) $(PROJECT)
 
 .PHONY: format
 format:

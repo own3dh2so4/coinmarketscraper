@@ -14,6 +14,7 @@ import (
 )
 
 func getCoinMarketUrls() []string {
+	fmt.Println("Geting URLS")
 	coinMarketUrls := []string{}
 	for i := 1; ; i++ {
 		newURL := fmt.Sprintf("https://coinmarketcap.com/%d", i)
@@ -21,6 +22,7 @@ func getCoinMarketUrls() []string {
 		if err == nil && resp.StatusCode == http.StatusOK {
 			coinMarketUrls = append(coinMarketUrls, newURL)
 		} else {
+			fmt.Println(err)
 			break
 		}
 		resp.Body.Close()
@@ -29,6 +31,7 @@ func getCoinMarketUrls() []string {
 }
 
 func Run(cancelChan <-chan struct{}) <-chan coin.Coin {
+	fmt.Println("Starting engine")
 	cancelChans := []chan<- struct{}{}
 	coinsChans := []<-chan coin.Coin{}
 	for _, url := range getCoinMarketUrls() {
@@ -64,9 +67,10 @@ func newCoinScraper(url string) coinScraper {
 }
 
 func (cs coinScraper) startScrap(cancelChan <-chan struct{}) <-chan coin.Coin {
+	fmt.Println("Starting scrapping", cs.url)
 	output := make(chan coin.Coin, 10)
 	go func() {
-		ticker := time.NewTicker(1 * time.Nanosecond).C
+		ticker := time.NewTicker(2 * time.Second).C
 		for {
 			select {
 			case <-cancelChan:
