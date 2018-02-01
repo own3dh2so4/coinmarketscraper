@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -8,17 +9,26 @@ import (
 	"sync"
 	"time"
 
+	"coinmarketscraper/certs"
 	"coinmarketscraper/coin"
 
 	"golang.org/x/net/html"
 )
 
+func newHttpClient() http.Client {
+	return http.Client{
+		Timeout:   time.Duration(2 * time.Second),
+		Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: certs.Pool}},
+	}
+}
+
 func getCoinMarketUrls() []string {
+	client := newHttpClient()
 	fmt.Println("Geting URLS")
 	coinMarketUrls := []string{}
 	for i := 1; ; i++ {
 		newURL := fmt.Sprintf("https://coinmarketcap.com/%d", i)
-		resp, err := http.Head(newURL)
+		resp, err := client.Head(newURL)
 		if err == nil && resp.StatusCode == http.StatusOK {
 			coinMarketUrls = append(coinMarketUrls, newURL)
 		} else {
@@ -59,10 +69,8 @@ type coinScraper struct {
 
 func newCoinScraper(url string) coinScraper {
 	return coinScraper{
-		url: url,
-		client: http.Client{
-			Timeout: time.Duration(2 * time.Second),
-		},
+		url:    url,
+		client: newHttpClient(),
 	}
 }
 
